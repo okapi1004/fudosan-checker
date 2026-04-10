@@ -1,0 +1,158 @@
+#!/usr/bin/env python3
+"""不動産物件自動巡回・通知システム。
+
+使い方:
+  1. config.yaml に検索条件を設定
+  2. .env に DISCORD_WEBHOOK_URL を設定
+  3. python main.py          # 1回だけ実行
+  4. python main.py --daemon  # スケジューラで定期実行
+"""
+import argparse
+import logging
+import os
+import sys
+
+import yaml
+from dotenv import load_dotenv
+
+from db.models import init_db, upsert_properties, mark_notified
+from notifiers.discord import send_new_properties, send_price_changes
+from scrapers.kenbiya import KenbiyaScraper
+from scrapers.rakumachi import RakumachiScraper
+from scrapers.suumo import SuumoScraper
+from scrapers.athome import AthomeScraper
+from scrapers.fudosan_japan import FudosanJapanScraper
+from scrapers.custom import CustomScraper
+
+# ログ設定
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    handlers=[
+        logging.StreamHandler(),
+        logging.FileHandler("fudosan-checker.log", encoding="utf-8"),
+    ],
+)
+logger = logging.getLogger(__name__)
+
+# 設定ファイルパス
+CONFIG_PATH = os.path.join(os.path.dirname(__file__), "config.yaml")
+
+# ポータルサイトとスクレイパーの対応
+SITE_SCRAPERS = {
+    "kenbiya": KenbiyaScraper,
+    "rakumachi": RakumachiScraper,
+    "suumo": SuumoScraper,
+    "athome": AthomeScraper,
+    "fudosan_japan": FudosanJapanScraper,
+}
+
+
+def load_config() -> dict:
+    with open(CONFIG_PATH, encoding="utf-8") as f:
+        return yaml.safe_load(f)
+
+
+def run_once(config: dict):
+    """全サイトを1回巡回し、新着物件を通知する。"""
+    sites = config.get("sites", {})
+    all_new = []
+    all_price_changed = []
+
+    # ポータルサイトの巡回
+    for site_key, scraper_class in SITE_SCRAPERS.items():
+        site_config = sites.get(site_key, {})
+        if not site_config.get("enabled", False):
+            continue
+
+        search_url = site_config.get("search_url", "")
+        if not search_url:
+            logger.info(f"[{site_key}] search_urlが未設定のためスキップ")
+            continue
+
+        logger.info(f"[{site_key}] 巡回開始...")
+        try:
+            scraper = scraper_class(search_url)
+            properties = scraper.scrape()
+            if properties:
+                new_props, price_changed = upsert_properties(properties)
+                all_new.extend(new_props)
+                all_price_changed.extend(price_changed)
+                logger.info(f"[{site_key}] 新着: {len(new_props)}件, 価格変更: {len(price_changed)}件")
+        except Exception as e:
+            logger.error(f"[{site_key}] エラー: {e}", exc_info=True)
+
+    # カスタムサイトの巡回
+    custom_sites = config.get("custom_sites", []) or []
+    for custom_config in custom_sites:
+        if not custom_config.get("enabled", False):
+            continue
+
+        name = custom_config.get("name", "カスタムサイト")
+        logger.info(f"[{name}] 巡回開始...")
+        try:
+            scraper = CustomScraper(custom_config)
+            properties = scraper.scrape()
+            if properties:
+                new_props, price_changed = upsert_properties(properties)
+                all_new.extend(new_props)
+                all_price_changed.extend(price_changed)
+                logger.info(f"[{name}] 新着: {len(new_props)}件, 価格変更: {len(price_changed)}件")
+        except Exception as e:
+            logger.error(f"[{name}] エラー: {e}", exc_info=True)
+
+    # Discord通知
+    notification = config.get("notification", {})
+    discord_config = notification.get("discord", {})
+    if discord_config.get("enabled", False) and (all_new or all_price_changed):
+        logger.info(f"Discord通知: 新着{len(all_new)}件, 価格変更{len(all_price_changed)}件")
+        if all_new:
+            send_new_properties(all_new)
+            mark_notified([p.url for p in all_new])
+        if all_price_changed:
+            send_price_changes(all_price_changed)
+
+    total = len(all_new) + len(all_price_changed)
+    if total == 0:
+        logger.info("新着・変更なし")
+    else:
+        logger.info(f"巡回完了: 新着{len(all_new)}件, 価格変更{len(all_price_changed)}件")
+
+
+def run_daemon(config: dict):
+    """APSchedulerで定期実行する。"""
+    from apscheduler.schedulers.blocking import BlockingScheduler
+
+    interval = config.get("schedule", {}).get("interval_minutes", 60)
+
+    scheduler = BlockingScheduler()
+    scheduler.add_job(run_once, "interval", minutes=interval, args=[config], id="fudosan_check")
+
+    logger.info(f"スケジューラ起動: {interval}分間隔で巡回します")
+    logger.info("初回巡回を実行します...")
+    run_once(config)
+
+    try:
+        scheduler.start()
+    except (KeyboardInterrupt, SystemExit):
+        logger.info("スケジューラを停止します")
+        scheduler.shutdown()
+
+
+def main():
+    parser = argparse.ArgumentParser(description="不動産物件自動巡回・通知システム")
+    parser.add_argument("--daemon", action="store_true", help="デーモンモード（定期実行）")
+    args = parser.parse_args()
+
+    load_dotenv()
+    init_db()
+    config = load_config()
+
+    if args.daemon:
+        run_daemon(config)
+    else:
+        run_once(config)
+
+
+if __name__ == "__main__":
+    main()

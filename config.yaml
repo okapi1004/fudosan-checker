@@ -1,0 +1,192 @@
+# 巡回間隔（分）
+schedule:
+  interval_minutes: 60
+
+# ===== ポータルサイト =====
+sites:
+  kenbiya:
+    enabled: true
+    search_url: "https://www.kenbiya.com/pp0/m/yamagata/tsuruoka-shi/"
+  rakumachi:
+    enabled: true
+    search_url: "https://www.rakumachi.jp/syuuekibukken/area/prefecture/dimAll/?area%5B0%5D=06203"
+  suumo:
+    enabled: true
+    search_url: "https://suumo.jp/chukoikkodate/yamagata/sc_tsuruoka/"
+  athome:
+    enabled: false  # botブロック（認証画面）が出るため無効化
+    search_url: "https://www.athome.co.jp/kodate/yamagata/tsuruoka-city/list/"
+  fudosan_japan:
+    enabled: false  # 403/botブロックのため無効化
+    search_url: "https://www.fudousan.or.jp/property/buy/06/area/list?m_adr%5B%5D=06203"
+
+# ===== 鶴岡市 地域不動産会社 =====
+custom_sites:
+  # --- スクレイピングしやすいサイト ---
+
+  - name: "拓生土地地所（中古住宅）"
+    enabled: true
+    url: "https://takusei.biz/sale_category/used-house/"
+    use_playwright: false
+    selectors:
+      listing: ".property-list-box"
+      title: ".property-list-title a"
+      price: ".property-list-price"
+      link: ".property-list-title a"
+      address: ".property-list-info-item"
+
+  - name: "拓生土地地所（土地）"
+    enabled: true
+    url: "https://takusei.biz/sale_category/land/"
+    use_playwright: false
+    selectors:
+      listing: ".property-list-box"
+      title: ".property-list-title a"
+      price: ".property-list-price"
+      link: ".property-list-title a"
+      address: ".property-list-info-item"
+
+  - name: "荘内ハウジング（売家）"
+    enabled: true
+    url: "https://www.shonai-h.com/sale-house/"
+    use_playwright: false
+    selectors:
+      listing: ".vk_outer"
+      title: "h2 a"
+      link: "h2 a"
+    labels:
+      price: "価　格"
+      address: "所在地"
+
+  - name: "荘内ハウジング（土地）"
+    enabled: true
+    url: "https://www.shonai-h.com/tochi/"
+    use_playwright: false
+    selectors:
+      listing: ".vk_outer"
+      title: "h2 a"
+      link: "h2 a"
+    labels:
+      price: "価　格"
+      address: "所在地"
+
+  - name: "カスタムエージェント"
+    enabled: true
+    url: "https://www.customsmile.co.jp/pickup/"
+    use_playwright: false
+    selectors:
+      listing: "li.pickup-list__item"
+      title: ".pickup-item-name"
+      price: ".pickup-price"
+      link: "a"
+      address: ".pickup-address"
+
+  - name: "アクア不動産（戸建て）"
+    enabled: true
+    url: "https://www.aqua-fudousan.co.jp/kodate/yamagata/result/tsuruoka-city.html"
+    use_playwright: false
+    selectors:
+      listing: "ul > li"
+      title: "a"
+      price: ""
+      link: "a[href*='/detail-']"
+      address: ""
+
+  - name: "アクア不動産（土地）"
+    enabled: true
+    url: "https://www.aqua-fudousan.co.jp/uri-tochi/yamagata/result/tsuruoka-city.html"
+    use_playwright: false
+    selectors:
+      listing: "ul > li"
+      title: "a"
+      price: ""
+      link: "a[href*='/detail-']"
+      address: ""
+
+  - name: "鈴木不動産（土地）"
+    enabled: true
+    url: "https://www.realestate.gr.jp/?search_element_0=&cf_limit_keyword_1=&cf_limit_keyword_2=&searchbutton=%E6%A4%9C%E7%B4%A2&csp=search_add&feadvns_max_line_2=6&fe_form_no=2"
+    use_playwright: false
+    selectors:
+      listing: "article"
+      title: "h3 a"
+      price: "ul li:first-child"
+      link: "h3 a"
+      address: "ul li:nth-child(3)"
+
+  - name: "鈴木不動産（戸建て）"
+    enabled: true
+    url: "https://www.realestate.gr.jp/?search_element_0=&cf_limit_keyword_1=&cf_limit_keyword_2=&searchbutton=%E6%A4%9C%E7%B4%A2&csp=search_add&feadvns_max_line_2=6&fe_form_no=11"
+    use_playwright: false
+    selectors:
+      listing: "article"
+      title: "h3 a"
+      price: "ul li:first-child"
+      link: "h3 a"
+      address: "ul li:nth-child(3)"
+
+  - name: "J Home Design"
+    enabled: true
+    url: "https://j-home-design.com/sale/"
+    use_playwright: false
+    selectors:
+      listing: "ul > li"
+      title: "h3"
+      price: "p:nth-of-type(1)"
+      link: "a[href*='/sale/']"
+      address: ""
+
+  # --- Playwright必要（JS動的レンダリング） ---
+
+  - name: "庄司不動産情報館"
+    enabled: true
+    url: "https://s-johokan.com/estate/buy/house/list"
+    use_playwright: true
+    selectors:
+      listing: "ul > li"
+      title: "a"
+      price: ""
+      link: "a"
+      address: ""
+
+  - name: "阿部多不動産"
+    enabled: false  # WPプラグイン(fudoukouku)のAJAXがheadlessで動作しないため無効化
+    url: "https://abeta-f.jp/buy"
+    use_playwright: true
+    selectors:
+      listing: "#kouku_cb a[href]"
+      title: ""
+      price: ""
+      link: ""
+      address: ""
+
+  - name: "石橋不動産"
+    enabled: true
+    url: "https://espo1484.co.jp/?bukken=ch4&so=kak&ord="
+    use_playwright: true
+    selectors:
+      listing: "div"
+      title: "a"
+      price: ""
+      link: "a[href*='/fudo/']"
+      address: ""
+
+  # --- 現時点でスクレイピング困難なサイト（無効化） ---
+  # HONMA不動産: サイトダウン中
+  # アライブ: 外部サイト(SUUMO等)へリダイレクト
+  # 大同不動産: 古いCGI、CSSクラスなし
+  # 白根不動産: 物件専用クラスなし
+  # マルコ不動産: AJAX読み込み、クラスなし
+  # 丸喜不動産: 物件2件のみ、クラスなし
+  # 城西拓業: 価格/住所セレクタなし
+  # J・クリエイティブ: 物件1件（成約済）
+  # すまいるホーム: Elementor動的クラス
+  # ロック: 現在掲載0件
+  # 東和不動産: 現在掲載0件（アクア不動産と同プラットフォーム）
+  # 小池不動産: NJC独自システム、複雑
+
+# ===== 通知設定 =====
+notification:
+  discord:
+    enabled: true
+    # webhook_url は .env ファイルに DISCORD_WEBHOOK_URL として記載
