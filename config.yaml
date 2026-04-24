@@ -171,6 +171,73 @@ custom_sites:
       link: "a[href*='/fudo/']"
       address: "span.top_shozaichi"
 
+  # --- 2回目の調査で追加 ---
+
+  - name: "尾形ホーム"
+    enabled: true
+    url: "https://ogata-home.co.jp/publics/index/14/"
+    use_playwright: false
+    selectors:
+      listing: "div.record"
+      title: "span.estate-list-title"
+      price: "span.bold.strong"
+      link: "a.m-right-10"
+      address: "td.bottom-cell"
+
+  - name: "大和住建（土地）"
+    enabled: true
+    url: "https://www.daiwa-jk.com/uri-tochi/yamagata/result/"
+    use_playwright: false
+    selectors:
+      listing: "div.article-object"
+      title: "p.object-name > a"
+      price: "td.cell3"
+      link: "p.object-name > a"
+      address: "td.cell1"
+
+  - name: "十和建設（戸建）"
+    enabled: true
+    url: "https://www.towagp.jp/kodate/yamagata/result/"
+    use_playwright: false
+    selectors:
+      listing: "div.article-object"
+      title: "p.object-name > a"
+      price: "td.cell3"
+      link: "p.object-name > a"
+      address: "td.cell1"
+
+  - name: "十和建設（土地）"
+    enabled: true
+    url: "https://www.towagp.jp/uri-tochi/yamagata/result/"
+    use_playwright: false
+    selectors:
+      listing: "div.article-object"
+      title: "p.object-name > a"
+      price: "td.cell3"
+      link: "p.object-name > a"
+      address: "td.cell1"
+
+  - name: "北斗産業"
+    enabled: true
+    url: "https://www.hokutosan.jp/?bukken=jsearch&shub=1&tik=0&kalb=0&kahb=0&mel=0&meh=0"
+    use_playwright: false
+    selectors:
+      listing: "div.list-box"
+      title: "h4.list-h4 a"
+      link: "h4.list-h4 a"
+    labels:
+      price: "価　格"
+      address: "所在地"
+
+  - name: "まちあかり"
+    enabled: true
+    url: "https://www.machiakari1007.com/fudo/"
+    use_playwright: false
+    selectors:
+      listing: "div.vk_post.bukken-sale"
+      title: "h5.vk_post_title a"
+      link: "h5.vk_post_title a"
+
   # --- 現時点でスクレイピング困難なサイト（無効化） ---
   # HONMA不動産: サイトダウン中
   # アライブ: 外部サイト(SUUMO等)へリダイレクト
@@ -184,6 +251,10 @@ custom_sites:
   # ロック: 現在掲載0件
   # 東和不動産: 現在掲載0件（アクア不動産と同プラットフォーム）
   # 小池不動産: NJC独自システム、複雑
+  # office reDesign: 現在掲載0件（アクア同プラットフォーム、将来復活可能）
+  # トータルハウジング夢空間: 価格が詳細ページのみ
+  # 佐藤工務: 古いHTMLテーブル、詳細ページなし
+  # 佐藤建築工務所: 売買物件欄が空
 
 # ===== 通知設定 =====
 notification:
