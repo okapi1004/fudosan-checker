@@ -150,15 +150,15 @@ custom_sites:
       address: ""
 
   - name: "阿部多不動産"
-    enabled: false  # WPプラグイン(fudoukouku)のAJAXがheadlessで動作しないため無効化
-    url: "https://abeta-f.jp/buy"
-    use_playwright: true
+    enabled: true
+    url: "https://abeta-f.jp/?shu=1&ken=06&sik=203"
+    use_playwright: false
     selectors:
-      listing: "#kouku_cb a[href]"
-      title: ""
-      price: ""
-      link: ""
-      address: ""
+      listing: "ul.grid-content li"
+      title: "span.top_title"
+      price: "span.top_price"
+      link: "a[href*='/fudo/']"
+      address: "span.top_shozaichi"
 
   - name: "石橋不動産"
     enabled: true
