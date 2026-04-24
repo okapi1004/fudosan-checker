@@ -134,26 +134,29 @@ def run_once(config: dict):
 
 def run_daemon(config: dict):
     """APSchedulerで定期実行する。"""
-    from apscheduler.schedulers.blocking import BlockingScheduler
+    from apscheduler.schedulers.background import BackgroundScheduler
+    import threading
 
     interval = config.get("schedule", {}).get("interval_minutes", 60)
 
-    scheduler = BlockingScheduler()
+    scheduler = BackgroundScheduler()
     scheduler.add_job(
         run_once, "interval", minutes=interval, args=[config], id="fudosan_check",
         max_instances=1, replace_existing=True,
-        misfire_grace_time=300,  # 5分以内なら遅延実行を許可
+        misfire_grace_time=300,
     )
 
     logger.info(f"スケジューラ起動: {interval}分間隔で巡回します")
     logger.info("初回巡回を実行します...")
-    run_once(config)
+    # 初回巡回をバックグラウンドで実行
+    threading.Thread(target=run_once, args=[config], daemon=True).start()
 
-    try:
-        scheduler.start()
-    except (KeyboardInterrupt, SystemExit):
-        logger.info("スケジューラを停止します")
-        scheduler.shutdown()
+    scheduler.start()
+
+    # Webサーバー起動（メインスレッド）
+    from web import app
+    logger.info("Web管理画面を起動: http://0.0.0.0:8080")
+    app.run(host="0.0.0.0", port=8080, use_reloader=False)
 
 
 def main():
