@@ -53,8 +53,17 @@ def load_config() -> dict:
         return yaml.safe_load(f)
 
 
+def _run_with_timeout(func, timeout_sec=120):
+    """関数をタイムアウト付きで実行する。"""
+    import concurrent.futures
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+        future = executor.submit(func)
+        return future.result(timeout=timeout_sec)
+
+
 def run_once(config: dict):
     """全サイトを1回巡回し、新着物件を通知する。"""
+    logger.info("===== 巡回開始 =====")
     sites = config.get("sites", {})
     all_new = []
     all_price_changed = []
@@ -73,12 +82,14 @@ def run_once(config: dict):
         logger.info(f"[{site_key}] 巡回開始...")
         try:
             scraper = scraper_class(search_url)
-            properties = scraper.scrape()
+            properties = _run_with_timeout(scraper.scrape, timeout_sec=120)
             if properties:
                 new_props, price_changed = upsert_properties(properties)
                 all_new.extend(new_props)
                 all_price_changed.extend(price_changed)
                 logger.info(f"[{site_key}] 新着: {len(new_props)}件, 価格変更: {len(price_changed)}件")
+        except TimeoutError:
+            logger.error(f"[{site_key}] タイムアウト（120秒）でスキップ")
         except Exception as e:
             logger.error(f"[{site_key}] エラー: {e}", exc_info=True)
 
@@ -92,12 +103,14 @@ def run_once(config: dict):
         logger.info(f"[{name}] 巡回開始...")
         try:
             scraper = CustomScraper(custom_config)
-            properties = scraper.scrape()
+            properties = _run_with_timeout(scraper.scrape, timeout_sec=120)
             if properties:
                 new_props, price_changed = upsert_properties(properties)
                 all_new.extend(new_props)
                 all_price_changed.extend(price_changed)
                 logger.info(f"[{name}] 新着: {len(new_props)}件, 価格変更: {len(price_changed)}件")
+        except TimeoutError:
+            logger.error(f"[{name}] タイムアウト（120秒）でスキップ")
         except Exception as e:
             logger.error(f"[{name}] エラー: {e}", exc_info=True)
 
@@ -126,7 +139,11 @@ def run_daemon(config: dict):
     interval = config.get("schedule", {}).get("interval_minutes", 60)
 
     scheduler = BlockingScheduler()
-    scheduler.add_job(run_once, "interval", minutes=interval, args=[config], id="fudosan_check")
+    scheduler.add_job(
+        run_once, "interval", minutes=interval, args=[config], id="fudosan_check",
+        max_instances=1, replace_existing=True,
+        misfire_grace_time=300,  # 5分以内なら遅延実行を許可
+    )
 
     logger.info(f"スケジューラ起動: {interval}分間隔で巡回します")
     logger.info("初回巡回を実行します...")
