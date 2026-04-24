@@ -8,6 +8,11 @@ services:
     volumes:
       - ./config.yaml:/app/config.yaml:ro
       - ./data:/app/data
+      - ./main.py:/app/main.py:ro
+      - ./web.py:/app/web.py:ro
+      - ./scrapers:/app/scrapers:ro
+      - ./notifiers:/app/notifiers:ro
+      - ./db:/app/db:ro
     environment:
       - TZ=Asia/Tokyo
       - DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/1492114840720773140/l2SWZeiUbOSf8Hvq9Qz8kyoxYUW93kUrdctrn3KH-c23ibiYrFIzozTmVObnqXu4Z31w
