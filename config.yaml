@@ -151,14 +151,17 @@ custom_sites:
 
   - name: "阿部多不動産"
     enabled: true
-    url: "https://abeta-f.jp/?shu=1&ken=06&sik=203"
+    url: "https://abeta-f.jp/?bukken=jsearch&shu=1&ken=06&sik=203"
     use_playwright: false
     selectors:
-      listing: "ul.grid-content li"
-      title: "span.top_title"
-      price: "span.top_price"
-      link: "a[href*='/fudo/']"
-      address: "span.top_shozaichi"
+      listing: "article"
+      title: "h2.entry-title a"
+      price: "dd.dpoint3"
+      link: "h2.entry-title a"
+      address: "td.list_address_td"
+    pagination:
+      url_pattern: "https://abeta-f.jp/?bukken=jsearch&shu=1&ken=06&sik=203&paged={n}"
+      max_pages: 20
 
   - name: "石橋不動産"
     enabled: true

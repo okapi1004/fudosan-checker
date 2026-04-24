@@ -44,6 +44,9 @@ class CustomScraper:
         self.use_playwright = config.get("use_playwright", False)
         self.selectors = config.get("selectors", {})
         self.labels = config.get("labels", {})
+        # ページネーション設定
+        # pagination: { url_pattern: "...page/{n}/", max_pages: 20 }
+        self.pagination = config.get("pagination", {})
 
     def scrape(self) -> list[Property]:
         if not self.url:
@@ -54,19 +57,44 @@ class CustomScraper:
             logger.warning(f"[{self.name}] listingセレクタが未設定です")
             return []
 
-        html = self._fetch_html()
-        if not html:
-            return []
+        all_properties = []
+        seen_urls = set()
 
-        return self._parse(html)
+        # ページネーション対応
+        if self.pagination.get("url_pattern"):
+            max_pages = self.pagination.get("max_pages", 20)
+            pattern = self.pagination["url_pattern"]
+            for page in range(1, max_pages + 1):
+                page_url = pattern.replace("{n}", str(page))
+                html = self._fetch_html(page_url)
+                if not html:
+                    break
+                props = self._parse(html)
+                if not props:
+                    break
+                # 重複チェック（全ページ同じ結果なら終了）
+                new_props = [p for p in props if p.url not in seen_urls]
+                if not new_props:
+                    break
+                for p in new_props:
+                    seen_urls.add(p.url)
+                all_properties.extend(new_props)
+        else:
+            html = self._fetch_html(self.url)
+            if html:
+                all_properties = self._parse(html)
 
-    def _fetch_html(self) -> str:
+        logger.info(f"[{self.name}] {len(all_properties)}件の物件を取得")
+        return all_properties
+
+    def _fetch_html(self, url: str = "") -> str:
+        target_url = url or self.url
         if self.use_playwright:
             scraper = _PlaywrightFetcher(self.name)
-            return scraper.fetch(self.url, self.selectors.get("listing"))
+            return scraper.fetch(target_url, self.selectors.get("listing"))
         else:
             scraper = _RequestsFetcher(self.name)
-            return scraper.fetch(self.url)
+            return scraper.fetch(target_url)
 
     def _parse(self, html: str) -> list[Property]:
         soup = BeautifulSoup(html, "lxml")
@@ -126,7 +154,6 @@ class CustomScraper:
                 logger.error(f"[{self.name}] パースエラー: {e}")
                 continue
 
-        logger.info(f"[{self.name}] {len(properties)}件の物件を取得")
         return properties
 
     @staticmethod
