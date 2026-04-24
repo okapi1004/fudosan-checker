@@ -36,23 +36,30 @@ class SuumoScraper(RequestsScraper):
         # SUUMOの物件リスト: div.property_unit が各物件
         for block in soup.select("div.property_unit"):
             try:
-                # 詳細リンク
-                link_tag = block.select_one("a.property_unit-title_text, h2 a, .dottable-vm a")
+                # 詳細リンク・タイトル
+                link_tag = block.select_one(".property_unit-title a, h2 a")
                 url = ""
                 if link_tag and link_tag.get("href"):
                     url = urljoin("https://suumo.jp", link_tag["href"])
-
-                # タイトル
                 title = link_tag.get_text(strip=True) if link_tag else ""
 
                 # 価格
-                price_tag = block.select_one(".dottable-vm .detailnote-price, .dottable-line--price .dottable-value")
-                price = price_tag.get_text(strip=True) if price_tag else ""
+                price = ""
+                price_tag = block.select_one(".dottable-value")
+                if price_tag:
+                    price = price_tag.get_text(strip=True)
+                if not price:
+                    # dt「販売価格」の隣のddから取得
+                    for dt in block.select("dt"):
+                        if "価格" in dt.get_text():
+                            dd = dt.find_next_sibling("dd")
+                            if dd:
+                                price = dd.get_text(strip=True)
+                            break
 
                 # 住所
-                addr_parts = block.select(".detailbox .detailbox-property--col1 dt")
                 address = ""
-                for dt in addr_parts:
+                for dt in block.select("dt"):
                     if "所在地" in dt.get_text():
                         dd = dt.find_next_sibling("dd")
                         if dd:

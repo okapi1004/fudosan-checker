@@ -77,8 +77,8 @@ custom_sites:
     selectors:
       listing: "li.pickup-list__item"
       title: ".pickup-item-name"
-      price: ".pickup-price"
-      link: "a"
+      price: ".pickup-price, .pickup-price02"
+      link: ".pickup-detail a"
       address: ".pickup-address"
 
   - name: "アクア不動産（戸建て）"
@@ -86,10 +86,10 @@ custom_sites:
     url: "https://www.aqua-fudousan.co.jp/kodate/yamagata/result/tsuruoka-city.html"
     use_playwright: false
     selectors:
-      listing: "ul > li"
-      title: "a"
-      price: ""
-      link: "a[href*='/detail-']"
+      listing: "div.article-object"
+      title: "p.object-name > a"
+      price: "td.cell3"
+      link: "p.object-name > a"
       address: ""
 
   - name: "アクア不動産（土地）"
@@ -97,10 +97,10 @@ custom_sites:
     url: "https://www.aqua-fudousan.co.jp/uri-tochi/yamagata/result/tsuruoka-city.html"
     use_playwright: false
     selectors:
-      listing: "ul > li"
-      title: "a"
-      price: ""
-      link: "a[href*='/detail-']"
+      listing: "div.article-object"
+      title: "p.object-name > a"
+      price: "td.cell3"
+      link: "p.object-name > a"
       address: ""
 
   - name: "鈴木不動産（土地）"
@@ -143,10 +143,10 @@ custom_sites:
     url: "https://s-johokan.com/estate/buy/house/list"
     use_playwright: true
     selectors:
-      listing: "ul > li"
-      title: "a"
-      price: ""
-      link: "a"
+      listing: "table.list"
+      title: "a.estateTitle"
+      price: ".flL.w200 .fSize20"
+      link: "a.estateTitle"
       address: ""
 
   - name: "阿部多不動産"
@@ -163,13 +163,13 @@ custom_sites:
   - name: "石橋不動産"
     enabled: true
     url: "https://espo1484.co.jp/?bukken=ch4&so=kak&ord="
-    use_playwright: true
+    use_playwright: false
     selectors:
-      listing: "div"
-      title: "a"
-      price: ""
+      listing: "ul.grid-content li"
+      title: "span.top_title"
+      price: "span.top_price"
       link: "a[href*='/fudo/']"
-      address: ""
+      address: "span.top_shozaichi"
 
   # --- 現時点でスクレイピング困難なサイト（無効化） ---
   # HONMA不動産: サイトダウン中
