@@ -238,10 +238,42 @@ custom_sites:
       title: "h5.vk_post_title a"
       link: "h5.vk_post_title a"
 
+  # --- 3回目の調査で追加 ---
+
+  - name: "大同不動産（土地）"
+    enabled: true
+    url: "https://daido-fudosan.com/baibai/baibai.cgi?up1=1&keys2=q&sort=up8&tid=list1"
+    use_playwright: false
+    selectors:
+      listing: "div.Buk_list"
+      title: "div.numbers"
+      price: "b.f_red"
+      link: "a[href*='baibai.cgi']"
+      address: "li:first-child b"
+
+  - name: "大同不動産（中古住宅）"
+    enabled: true
+    url: "https://daido-fudosan.com/baibai/baibai.cgi?up1=1&keys2=r&sort=up8&tid=list2"
+    use_playwright: false
+    selectors:
+      listing: "div.Buk_list"
+      title: "div.numbers"
+      price: "b.f_red"
+      link: "a[href*='baibai.cgi']"
+      address: "li:first-child b"
+
+  - name: "つるおかランド・バンク"
+    enabled: true
+    url: "https://t-landbank.org/bukken/"
+    use_playwright: false
+    selectors:
+      listing: "h3"
+      title: "a"
+      link: "a"
+
   # --- 現時点でスクレイピング困難なサイト（無効化） ---
   # HONMA不動産: サイトダウン中
   # アライブ: 外部サイト(SUUMO等)へリダイレクト
-  # 大同不動産: 古いCGI、CSSクラスなし
   # 白根不動産: 物件専用クラスなし
   # マルコ不動産: AJAX読み込み、クラスなし
   # 丸喜不動産: 物件2件のみ、クラスなし
