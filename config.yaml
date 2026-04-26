@@ -1,6 +1,6 @@
 # 巡回間隔（分）
 schedule:
-  interval_minutes: 60
+  interval_minutes: 15
 
 # ===== ポータルサイト =====
 sites:
