@@ -10,10 +10,14 @@
 import argparse
 import logging
 import os
+import socket
 import sys
 
 import yaml
 from dotenv import load_dotenv
+
+# グローバルなソケットタイムアウト（DNS解決・TCP接続のハング防止）
+socket.setdefaulttimeout(60)
 
 from db.models import init_db, upsert_properties, mark_notified
 from notifiers.discord import send_new_properties, send_price_changes
@@ -54,11 +58,20 @@ def load_config() -> dict:
 
 
 def _run_with_timeout(func, timeout_sec=120):
-    """関数をタイムアウト付きで実行する。"""
+    """関数をタイムアウト付きで実行する。
+
+    注意: ThreadPoolExecutor の `with` 文は終了時にスレッド完了を待つため、
+    タイムアウト時に hung thread をリーク（無視）して即座に戻る形にしている。
+    リークしたスレッドは Python プロセスに残るが、次の巡回をブロックしない。
+    """
     import concurrent.futures
-    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+    executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+    try:
         future = executor.submit(func)
         return future.result(timeout=timeout_sec)
+    finally:
+        # hung thread を待たずに executor を捨てる（リークするが ok）
+        executor.shutdown(wait=False)
 
 
 def run_once(config: dict):
@@ -132,6 +145,20 @@ def run_once(config: dict):
         logger.info(f"巡回完了: 新着{len(all_new)}件, 価格変更{len(all_price_changed)}件")
 
 
+def run_once_with_timeout(config: dict):
+    """run_once を全体タイムアウト付きで実行する（10分）。
+
+    1サイトのタイムアウトに加えて、全体のセーフティネット。
+    ハングした場合も次の巡回が動くようにする。
+    """
+    try:
+        _run_with_timeout(lambda: run_once(config), timeout_sec=600)
+    except TimeoutError:
+        logger.error("===== 巡回全体がタイムアウト（10分）。次回に持ち越します =====")
+    except Exception as e:
+        logger.error(f"巡回エラー: {e}", exc_info=True)
+
+
 def run_daemon(config: dict):
     """APSchedulerで定期実行する。"""
     from apscheduler.schedulers.background import BackgroundScheduler
@@ -141,7 +168,7 @@ def run_daemon(config: dict):
 
     scheduler = BackgroundScheduler()
     scheduler.add_job(
-        run_once, "interval", minutes=interval, args=[config], id="fudosan_check",
+        run_once_with_timeout, "interval", minutes=interval, args=[config], id="fudosan_check",
         max_instances=1, replace_existing=True,
         misfire_grace_time=300,
     )
@@ -149,7 +176,7 @@ def run_daemon(config: dict):
     logger.info(f"スケジューラ起動: {interval}分間隔で巡回します")
     logger.info("初回巡回を実行します...")
     # 初回巡回をバックグラウンドで実行
-    threading.Thread(target=run_once, args=[config], daemon=True).start()
+    threading.Thread(target=run_once_with_timeout, args=[config], daemon=True).start()
 
     scheduler.start()
 
