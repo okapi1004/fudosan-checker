@@ -9,3 +9,8 @@ key/
 *.log
 data/
 .claude/
+mnt/
+*.mp3
+*.mp4
+*.wav
+*.m4a
